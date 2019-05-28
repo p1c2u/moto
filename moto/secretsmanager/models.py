@@ -33,6 +33,7 @@ class SecretsManagerBackend(BaseBackend):
         self.name = kwargs.get('name', '')
         self.createdate = int(time.time())
         self.secret_string = ''
+        self.secret_binary = None
         self.rotation_enabled = False
         self.rotation_lambda_arn = ''
         self.auto_rotate_after_days = 0
@@ -50,7 +51,7 @@ class SecretsManagerBackend(BaseBackend):
         if not self._is_valid_identifier(secret_id):
             raise ResourceNotFoundException()
 
-        response = json.dumps({
+        response_data = {
             "ARN": secret_arn(self.region, self.secret_id),
             "Name": self.name,
             "VersionId": "A435958A-D821-4193-B719-B7769357AER4",
@@ -59,13 +60,22 @@ class SecretsManagerBackend(BaseBackend):
                 "AWSCURRENT",
             ],
             "CreatedDate": "2018-05-23 13:16:57.198000"
-        })
+        }
+
+        if self.secret_string is not None:
+            response_data["SecretString"] = self.secret_string
+
+        if self.secret_binary is not None:
+            response_data["SecretBinary"] = self.secret_binary
+
+        response = json.dumps(response_data)
 
         return response
 
-    def create_secret(self, name, secret_string, **kwargs):
+    def create_secret(self, name, secret_string=None, secret_binary=None, **kwargs):
 
         self.secret_string = secret_string
+        self.secret_binary = secret_binary
         self.secret_id = name
         self.name = name
 
